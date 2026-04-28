@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Acessos - Portal Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <script src="auth.js"></script>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1>ALP<span>I</span>TEL <span>GESTÃO DE ACESSOS</span></h1>
+            <div class="user-info">
+                <a href="dashboard.html" style="text-decoration: none; color: var(--gray); font-weight: 600;">Voltar ao Início</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+            <section style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-bottom: 4px solid var(--primary);">
+                <h3 style="margin-bottom: 20px;">Criar Novo Login</h3>
+                <form id="create-user-form">
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="new-name" placeholder="Ex: João Silva" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Usuário (Login)</label>
+                        <input type="text" id="new-user" placeholder="Ex: joao.silva" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <div style="position: relative;">
+                            <input type="password" id="new-pass" value="12345" required 
+                                   onfocus="if(this.value==='12345') this.value='';" 
+                                   style="width: 100%; padding-right: 45px;">
+                            <span id="toggle-pass" class="material-icons" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; user-select: none; color: #94a3b8;">visibility</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Nível de Acesso</label>
+                        <select id="new-role" required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 10px;">Salvar Novo Usuário</button>
+                </form>
+            </section>
+
+            <section style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-bottom: 4px solid var(--primary);">
+                <h3 style="margin-bottom: 20px;">Usuários Cadastrados</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--primary);">
+                                <th style="padding: 10px;">Nome</th>
+                                <th style="padding: 10px;">Usuário</th>
+                                <th style="padding: 10px;">Nível</th>
+                                <th style="padding: 10px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 style="margin-bottom: 15px;">Confirmar Ação</h3>
+            <p id="confirm-message" style="margin-bottom: 25px; color: var(--gray);">Tem certeza?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-confirm-yes" class="btn-login" style="margin-top:0; width: auto; padding: 10px 20px;">Confirmar</button>
+                <button id="btn-confirm-no" style="padding: 10px 20px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: white;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const usersTable = document.getElementById('users-tbody');
+        const createUserForm = document.getElementById('create-user-form');
+        const roleSelect = document.getElementById('new-role');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmMsg = document.getElementById('confirm-message');
+        const btnConfirmYes = document.getElementById('btn-confirm-yes');
+        const btnConfirmNo = document.getElementById('btn-confirm-no');
+        const togglePass = document.getElementById('toggle-pass');
+        const passInput = document.getElementById('new-pass');
+
+        const session = JSON.parse(sessionStorage.getItem('alpitel_session'));
+
+        togglePass.addEventListener('click', () => {
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            togglePass.textContent = isPass ? 'visibility_off' : 'visibility';
+            togglePass.style.color = isPass ? 'var(--primary)' : '#94a3b8';
+        });
+
+        function openConfirm(msg) {
+            return new Promise((resolve) => {
+                confirmMsg.textContent = msg;
+                confirmModal.classList.remove('hidden');
+
+                const handleYes = () => {
+                    confirmModal.classList.add('hidden');
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleNo = () => {
+                    confirmModal.classList.add('hidden');
+                    cleanup();
+                    resolve(false);
+                };
+
+                const cleanup = () => {
+                    btnConfirmYes.removeEventListener('click', handleYes);
+                    btnConfirmNo.removeEventListener('click', handleNo);
+                };
+
+                btnConfirmYes.addEventListener('click', handleYes);
+                btnConfirmNo.addEventListener('click', handleNo);
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '✅' : '⚠️';
+            toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function setupRoleOptions() {
+            roleSelect.innerHTML = '';
+            const role = session.role;
+
+            if (role === 'admin') {
+                roleSelect.innerHTML = `
+                    <option value="frota">FROTA</option>
+                    <option value="colaborador">Colaborador(a) de Campo</option>
+                    <option value="manutencao">Equipe de Manutenção</option>
+                    <option value="supervisor">Supervisor(a) Operacional</option>
+                    <option value="gestao">Coordenador(a)</option>
+                    <option value="admin">Admin (Dev)</option>
+                `;
+            } else if (role === 'gestao') {
+                roleSelect.innerHTML = `
+                    <option value="supervisor">Supervisor(a) Operacional</option>
+                    <option value="colaborador">Colaborador(a) de Campo</option>
+                `;
+            } else if (role === 'frota') {
+                roleSelect.innerHTML = `
+                    <option value="manutencao">Equipe de Manutenção</option>
+                `;
+            } else if (role === 'supervisor') {
+                roleSelect.innerHTML = `
+                    <option value="colaborador">Colaborador(a) de Campo</option>
+                `;
+            }
+        }
+
+        function canDelete(targetRole) {
+            const myRole = session.role;
+            if (myRole === 'admin') return true;
+            if (myRole === 'gestao' && (targetRole === 'supervisor' || targetRole === 'colaborador')) return true;
+            if (myRole === 'frota' && targetRole === 'manutencao') return true;
+            if (myRole === 'supervisor' && targetRole === 'colaborador') return true;
+            return false;
+        }
+
+        function renderUsers() {
+            const users = JSON.parse(localStorage.getItem('alpitel_users'));
+            usersTable.innerHTML = '';
+            
+            Object.keys(users).forEach(username => {
+                const user = users[username];
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f1f5f9';
+                
+                const deleteAction = (username !== 'admin' && canDelete(user.role)) 
+                    ? `<button onclick="deleteUser('${username}')" style="color: var(--secondary); background: none; border: none; cursor: pointer; font-weight: bold;">Remover</button>` 
+                    : '<span style="color: #cbd5e1; font-size: 0.7rem;">Sem Permissão</span>';
+
+                tr.innerHTML = `
+                    <td style="padding: 12px;">${user.name}</td>
+                    <td style="padding: 12px;"><code>${username}</code></td>
+                    <td style="padding: 12px;"><span style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">${user.role.toUpperCase()}</span></td>
+                    <td style="padding: 12px;">${deleteAction}</td>
+                `;
+                usersTable.appendChild(tr);
+            });
+        }
+
+        createUserForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const users = JSON.parse(localStorage.getItem('alpitel_users'));
+            
+            const newUser = document.getElementById('new-user').value.toLowerCase().trim();
+            const newName = document.getElementById('new-name').value;
+            const newPass = document.getElementById('new-pass').value;
+            const newRole = document.getElementById('new-role').value;
+
+            if (users[newUser]) {
+                showToast('Este usuário já existe!', 'error');
+                return;
+            }
+
+            users[newUser] = {
+                password: newPass,
+                role: newRole,
+                name: newName
+            };
+
+            localStorage.setItem('alpitel_users', JSON.stringify(users));
+            showToast('Usuário criado com sucesso!');
+            createUserForm.reset();
+            document.getElementById('new-pass').value = '12345';
+            renderUsers();
+        });
+
+        window.deleteUser = async function(username) {
+            if (await openConfirm(`Tem certeza que deseja remover o acesso de ${username}?`)) {
+                const users = JSON.parse(localStorage.getItem('alpitel_users'));
+                delete users[username];
+                localStorage.setItem('alpitel_users', JSON.stringify(users));
+                renderUsers();
+                showToast(`Acesso de ${username} removido!`, 'error');
+            }
+        }
+
+        setupRoleOptions();
+        renderUsers();
+    </script>
+</body>
+</html>
