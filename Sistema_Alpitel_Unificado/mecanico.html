@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal dos Mecânicos - Painel de Serviços</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <script src="auth.js"></script>
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-area">
+                <h1>ALP<span>I</span>TEL <span>OFICINA MECÂNICA</span></h1>
+            </div>
+            <div class="user-info">
+                <span id="user-display" style="font-weight: 600; color: var(--gray); margin-right: 15px;">---</span>
+                <a href="dashboard.html" style="text-decoration: none; padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; color: var(--dark); font-weight: 700; font-size: 0.85rem; transition: all 0.2s; background: white;">Voltar ao Portal</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="welcome-text">
+            <h2>Painel de Serviços</h2>
+            <p>Gerencie os veículos encaminhados para reparo. Aceite os serviços e libere quando concluídos.</p>
+        </div>
+
+        <div id="maintenance-grid" class="apps-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            <!-- Veículos aparecerão aqui -->
+        </div>
+
+        <div id="empty-state" class="hidden" style="text-align: center; padding: 50px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <span class="material-icons" style="font-size: 4rem; color: #cbd5e1; margin-bottom: 15px;">build_circle</span>
+            <h3>Nenhum Serviço Pendente</h3>
+            <p style="color: var(--gray);">A equipe da frota não encaminhou veículos para a oficina no momento.</p>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmação Customizada -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 id="confirm-title" style="margin-bottom: 15px;">Finalizar Reparo</h3>
+            <p id="confirm-message" style="margin-bottom: 25px; color: var(--gray);">Confirmar que o veículo está consertado e pronto para retornar à frota?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-confirm-yes" class="btn-login" style="background: var(--primary); margin-top: 0; width: auto; padding: 10px 20px;">Sim, Liberar</button>
+                <button id="btn-confirm-no" style="padding: 10px 20px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: white;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <script>
+        const session = JSON.parse(sessionStorage.getItem('alpitel_session'));
+        if (session) {
+            document.getElementById('user-display').textContent = `${session.name} (${session.role.toUpperCase()})`;
+        }
+
+        const grid = document.getElementById('maintenance-grid');
+        const emptyState = document.getElementById('empty-state');
+        const confirmModal = document.getElementById('confirm-modal');
+        const btnConfirmYes = document.getElementById('btn-confirm-yes');
+        const btnConfirmNo = document.getElementById('btn-confirm-no');
+
+        let fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || [];
+        let logs = JSON.parse(localStorage.getItem('alpitel_logs')) || [];
+
+        function renderCards() {
+            const vehicles = fleet.filter(v => v.status === 'aguardando_oficina' || v.status === 'reparo');
+            grid.innerHTML = '';
+
+            if (vehicles.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            vehicles.forEach(v => {
+                const isReparo = v.status === 'reparo';
+                const badgeColor = isReparo ? '#eab308' : '#3b82f6';
+                const badgeBg = isReparo ? '#fef08a' : '#dbeafe';
+                const badgeText = isReparo ? 'EM REPARO' : 'NOVO SERVIÇO';
+                const lastLog = [...logs].reverse().find(l => l.veiculo === v.placa && l.type === 'manutencao');
+
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.style.textAlign = 'left';
+                card.style.padding = '25px';
+                card.style.borderLeft = `6px solid ${badgeColor}`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.2rem;">${v.modelo}</h3>
+                            <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: 700;">${v.placa}</code>
+                        </div>
+                        <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800;">${badgeText}</span>
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                        <p style="font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 5px;">DETALHES DO CHAMADO:</p>
+                        <p style="font-size: 0.95rem; color: #1e293b;">${lastLog ? lastLog.msg : 'Avaria não detalhada.'}</p>
+                        <p style="font-size: 0.75rem; color: var(--gray); margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 5px;">Solicitado em: ${lastLog ? lastLog.date + ' ' + lastLog.hora + (lastLog.autor ? ` por ${lastLog.autor}` : '') : '---'}</p>
+                    </div>
+
+                    ${!isReparo ? `
+                    <button onclick="startRepair(${v.id})" class="btn-login" style="margin-top: 0; background: #3b82f6;">
+                        INICIAR SERVIÇO
+                    </button>
+                    ` : `
+                    <button onclick="finalizeRepair(${v.id})" class="btn-login" style="margin-top: 0; background: var(--primary);">
+                        CONCLUIR REPARO E LIBERAR
+                    </button>
+                    `}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.startRepair = function(id) {
+            const v = fleet.find(item => item.id === id);
+            v.status = 'reparo';
+            
+            logs.push({
+                id: Date.now(),
+                type: 'manutencao_progresso',
+                veiculo: v.placa,
+                autor: session ? session.name : 'Sistema',
+                hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toLocaleDateString(),
+                msg: `Serviço aceito pelo mecânico. Manutenção em andamento.`
+            });
+
+            localStorage.setItem('alpitel_fleet', JSON.stringify(fleet));
+            localStorage.setItem('alpitel_logs', JSON.stringify(logs));
+            
+            showToast(`Serviço do ${v.placa} iniciado!`);
+            renderCards();
+        }
+
+        let pendingVehicleId = null;
+        window.finalizeRepair = function(id) {
+            pendingVehicleId = id;
+            confirmModal.classList.remove('hidden');
+        }
+
+        btnConfirmNo.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            pendingVehicleId = null;
+        });
+
+        btnConfirmYes.addEventListener('click', () => {
+            if (pendingVehicleId) {
+                const v = fleet.find(item => item.id === pendingVehicleId);
+                v.status = 'disponivel';
+                
+                logs.push({
+                    id: Date.now(),
+                    type: 'manutencao_fim',
+                    veiculo: v.placa,
+                    autor: session ? session.name : 'Sistema',
+                    hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    date: new Date().toLocaleDateString(),
+                    msg: `Manutenção concluída pelo mecânico. Veículo liberado para operação.`
+                });
+
+                localStorage.setItem('alpitel_fleet', JSON.stringify(fleet));
+                localStorage.setItem('alpitel_logs', JSON.stringify(logs));
+                
+                confirmModal.classList.add('hidden');
+                showToast(`✅ Veículo ${v.placa} liberado com sucesso!`);
+                renderCards();
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = `toast success`;
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.background = 'white';
+            toast.style.padding = '16px 24px';
+            toast.style.borderRadius = '12px';
+            toast.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
+            toast.style.borderLeft = '5px solid #008C45';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        renderCards();
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel - Portal Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1>ALP<span>I</span>TEL <span>PORTAL</span></h1>
+            <div class="user-info">
+                <span id="user-display">Usuário</span>
+                <button id="logout-btn" class="btn-logout">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="welcome-text">
+            <h2>Bem-vindo ao Hub Operacional</h2>
+            <p>Selecione o sistema que deseja acessar abaixo:</p>
+        </div>
+
+        <div class="apps-grid" id="apps-grid">
+            <!-- Os cards dos sistemas serão inseridos dinamicamente pelo auth.js -->
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <script src="auth.js"></script>
+</body>
+</html>
