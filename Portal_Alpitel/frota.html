@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Frota - Alpitel</title>
+    <script src="/auth.js"></script>
+    <link rel="stylesheet" href="style_frota.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <h1>ALP<span>I</span>TEL <span>OPERAÇÃO</span></h1>
+                <p>Gestão de Operações</p>
+            </div>
+            <nav>
+                <ul id="sidebar-nav">
+                    <li class="active" data-target="tab-painel">Painel Geral</li>
+                    <li data-target="tab-veiculos">Veículos</li>
+                    <li data-target="tab-manutencao">Acompanhamento de Manutenção</li>
+
+                    <li onclick="window.location.href='dashboard.html'"
+                        style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px; color: #4b5563; font-weight: 700; cursor: pointer;">
+                        Voltar ao Portal
+                    </li>
+                    <li id="btn-logout" style="color: var(--secondary-color); margin-top: 5px; cursor: pointer;">Sair do
+                        Sistema</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button id="menu-toggle" class="material-icons" style="background: none; border: none; cursor: pointer; color: var(--primary-color); display: none;">menu</button>
+                    <h2>Frota Operacional</h2>
+                </div>
+                <div class="user-profile">
+                    <span id="user-display">---</span>
+                </div>
+            </header>
+
+            <!-- Tab Painel Geral -->
+            <div id="tab-painel" class="tab-content active-tab">
+                <!-- Stats Cards -->
+                <section class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total da Frota</h3>
+                        <p id="total-veiculos">0</p>
+                    </div>
+                    <div class="stat-card green">
+                        <h3>Disponíveis</h3>
+                        <p id="veiculos-disponiveis">0</p>
+                    </div>
+                    <div class="stat-card red">
+                        <h3>Em Manutenção</h3>
+                        <p id="veiculos-manutencao">0</p>
+                    </div>
+                </section>
+
+                <div class="dashboard-grid">
+                    <!-- Fleet List -->
+                    <section class="fleet-section">
+                        <div class="section-header">
+                            <h3>Status da Frota</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="fleet-table">
+                                <thead>
+                                    <tr>
+                                        <th>Veículo</th>
+                                        <th>Placa</th>
+                                        <th>Status</th>
+                                        <th>Última KM</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Gerado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Seção de Avarias e Manutenção -->
+                    <section class="action-section">
+                        <div id="maintenance-section" class="hidden">
+                            <div class="section-header">
+                                <h3>Sinalização de Veículo Danificado</h3>
+                            </div>
+                            <form id="maintenance-form">
+                                <div class="form-group">
+                                    <label for="maint-veiculo">Veículo com Avaria</label>
+                                    <select id="maint-veiculo" required>
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="problem-input">Possível Problema / Sintoma</label>
+                                    <input type="text" id="problem-input"
+                                        placeholder="Ex: Barulho na suspensão / Motor falhando" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="obs-input">Observações do supervisor/colaborador</label>
+                                    <textarea id="obs-input" rows="4"
+                                        style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; outline: none;"
+                                        placeholder="Relatório técnico ou observação da supervisão..."></textarea>
+                                </div>
+                                <button type="submit" class="btn-primary"
+                                    style="background-color: var(--secondary-color)">Registrar Avaria</button>
+                            </form>
+                        </div>
+
+                        <div class="log-section">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4>Atividade Recente</h4>
+                                <button id="btn-clear-logs" class="btn-history"
+                                    style="color: var(--secondary-color); border-color: var(--secondary-color); font-size: 0.65rem;">Limpar
+                                    Tudo</button>
+                            </div>
+                            <ul id="activity-log">
+                                <!-- Gerado via JS -->
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Tab Veículos (Lista Completa) -->
+            <div id="tab-veiculos" class="tab-content hidden">
+                <section
+                    style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <div class="section-header" style="margin-bottom: 20px;">
+                        <h3 style="font-size: 1.2rem; color: var(--dark);">Lista Completa de Veículos</h3>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 5px;">Ordenados alfabeticamente por
+                            modelo (Motos, Caminhões, etc.)</p>
+                    </div>
+                    <div class="table-container">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--primary-color);">
+                                    <th style="padding: 12px; color: var(--gray);">Modelo</th>
+                                    <th style="padding: 12px; color: var(--gray);">Placa</th>
+                                    <th style="padding: 12px; color: var(--gray);">Kilometragem</th>
+                                    <th style="padding: 12px; color: var(--gray);">Status Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-vehicles-table">
+                                <!-- Gerado via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tab Acompanhamento de Manutenção -->
+            <div id="tab-manutencao" class="tab-content hidden">
+                <section
+                    style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <div class="section-header" style="margin-bottom: 20px;">
+                        <h3 style="font-size: 1.2rem; color: var(--dark);">Status de Manutenção em Tempo Real</h3>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 5px;">Acompanhe o ciclo de vida das
+                            avarias sinalizadas.</p>
+                    </div>
+                    <div id="maintenance-tracker-list" style="display: flex; flex-direction: column; gap: 15px;">
+                        <!-- Gerado via JS -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <footer
+        style="text-align: center; padding: 20px; color: #6b7280; font-size: 0.8rem; background: #fff; border-top: 1px solid #e5e7eb;">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <!-- Modal de Histórico Individual -->
+    <div id="history-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Histórico de Manutenção: <span id="modal-veiculo-nome"></span></h3>
+                <button onclick="closeModal()" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul id="vehicle-history-list">
+                    <!-- Gerado via JS -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação Customizada -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 id="confirm-title" style="margin-bottom: 15px;">Confirmar Ação</h3>
+            <p id="confirm-message" style="margin-bottom: 25px; color: var(--gray);">Tem certeza que deseja realizar
+                esta operação?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-confirm-yes" class="btn-reset">Confirmar</button>
+                <button id="btn-confirm-no" class="btn-history" style="border: 1px solid #cbd5e1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Lógica do Menu Hambúrguer para Mobile
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('active-mobile');
+            });
+        }
+
+        // Fecha ao clicar fora (no conteúdo principal)
+        document.querySelector('.main-content').addEventListener('click', () => {
+            if (sidebar.classList.contains('active-mobile')) {
+                sidebar.classList.remove('active-mobile');
+            }
+        });
+
+        // Fecha ao clicar em um item do menu
+        document.querySelectorAll('.sidebar li').forEach(li => {
+            li.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('active-mobile');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

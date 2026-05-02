@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Acessos - Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <script src="/auth.js"></script>
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-area">
+                <h1>ALP<span>I</span>TEL <span>GESTÃO DE ACESSOS</span></h1>
+            </div>
+            <div class="user-info">
+                <span id="user-display" style="font-weight: 600; color: var(--gray); margin-right: 15px;">---</span>
+                <a href="dashboard.html" style="text-decoration: none; padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; color: var(--dark); font-weight: 700; font-size: 0.85rem; transition: all 0.2s; background: white;">Voltar ao Portal</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="welcome-text">
+            <h2>Gerenciamento de Usuários</h2>
+            <p>Cadastre novos colaboradores e defina seus níveis de acesso ao sistema.</p>
+        </div>
+
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start;">
+            <!-- Form Card -->
+            <div class="app-card" style="text-align: left;">
+                <h3 style="margin-bottom: 20px; color: var(--primary);">Novo Usuário</h3>
+                <form id="user-form">
+                    <div class="input-group">
+                        <label>R.E. (Registro de Empregado)</label>
+                        <input type="text" id="new-re" placeholder="Digite o R.E. para buscar..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="new-name" placeholder="Nome aparecerá automaticamente..." required readonly style="background: #f8fafc; cursor: not-allowed;">
+                    </div>
+                    <div class="input-group">
+                        <label>Login (Usuário)</label>
+                        <input type="text" id="new-user" placeholder="Ex: wilson.alpitel" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Cargo / Nível de Acesso</label>
+                        <select id="new-role" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; background: white;" required>
+                            <option value="colaborador">Colaborador (Campo)</option>
+                            <option value="manutencao">Manutenção (Oficina)</option>
+                            <option value="supervisor">Supervisor Operacional</option>
+                            <option value="gestao">Coordenador / Gestão</option>
+                            <option value="admin">Administrador (Total)</option>
+                        </select>
+                    </div>
+                    <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; color: var(--gray);">
+                        <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">info</span> 
+                        Uma senha provisória será gerada automaticamente.
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 10px;">CRIAR CONTA</button>
+                </form>
+            </div>
+
+            <!-- List Card -->
+            <div class="app-card" style="text-align: left;">
+                <h3 style="margin-bottom: 20px;">Usuários Cadastrados</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #f1f5f9; text-align: left;">
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">NOME</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">R.E.</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">LOGIN</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">CARGO</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list">
+                            <!-- Gerado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <style>
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 5px solid var(--primary);
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .toast.error { border-left-color: var(--secondary); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.fade-out {
+            animation: slideOut 0.5s ease-in forwards;
+        }
+        @keyframes slideOut {
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: all 0.3s;
+        }
+        .modal.active .modal-content { transform: scale(1); }
+    </style>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content" style="border-top: 5px solid var(--primary);">
+            <span class="material-icons" style="font-size: 48px; color: var(--primary); margin-bottom: 15px;">vpn_key</span>
+            <h3>Usuário Criado!</h3>
+            <p style="color: var(--gray); margin-top: 10px;">Passe a senha abaixo para o colaborador:</p>
+            
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin: 20px 0; font-family: monospace; font-size: 2rem; letter-spacing: 5px; font-weight: 800; color: var(--dark); border: 2px dashed #cbd5e1;">
+                <span id="generated-pass">000000</span>
+            </div>
+
+            <p style="font-size: 0.8rem; color: var(--secondary); font-weight: 700;">Atenção: O colaborador deverá alterar esta senha no primeiro acesso.</p>
+            
+            <button onclick="document.getElementById('password-modal').classList.remove('active')" style="width: 100%; margin-top: 25px; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer;">ENTENDIDO</button>
+        </div>
+    </div>
+
+    <!-- Confirm Modal (Restaurado) -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="confirm-title" style="margin-bottom: 15px;">Confirmar Exclusão</h3>
+            <p id="confirm-msg" style="color: var(--gray); margin-bottom: 25px;">Tem certeza que deseja realizar esta operação?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-confirm-yes" style="padding: 12px 24px; border-radius: 8px; border: none; background: var(--secondary); color: white; font-weight: 800; cursor: pointer;">Excluir</button>
+                <button id="btn-confirm-no" style="padding: 12px 24px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: 800; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const session = JSON.parse(localStorage.getItem('alpitel_session'));
+        if (session) {
+            document.getElementById('user-display').textContent = session.name;
+        }
+
+        const userForm = document.getElementById('user-form');
+        const userList = document.getElementById('user-list');
+        const reInput = document.getElementById('new-re');
+        const nameInput = document.getElementById('new-name');
+
+        // Base de Dados Simulada (Mock DB)
+        const MOCK_EMPLOYEES = {
+            "1753": "Wilson Borges Xavier Junior",
+            "929": "Maxwell Araujo",
+            "2020": "Ricardo Oliveira Silva",
+            "3030": "Ana Paula Mendes",
+            "4040": "Marcos Antônio Ferreira",
+            "5050": "Cláudia Regina Santos"
+        };
+
+        // Lógica de busca automática por R.E.
+        reInput.addEventListener('input', () => {
+            const re = reInput.value;
+            if (MOCK_EMPLOYEES[re]) {
+                nameInput.value = MOCK_EMPLOYEES[re];
+                nameInput.style.borderColor = 'var(--primary)';
+                nameInput.style.color = 'var(--dark)';
+            } else {
+                nameInput.value = '';
+                nameInput.style.borderColor = '#e2e8f0';
+            }
+        });
+
+        // Toast Function
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'check_circle' : 'error';
+            toast.innerHTML = `<span class="material-icons" style="color: ${type === 'success' ? 'var(--primary)' : 'var(--secondary)'}">${icon}</span> <strong>${msg}</strong>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // Custom Confirm
+        function openConfirm(msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                const btnYes = document.getElementById('btn-confirm-yes');
+                const btnNo = document.getElementById('btn-confirm-no');
+                document.getElementById('confirm-msg').textContent = msg;
+                
+                modal.classList.add('active');
+
+                const cleanup = (res) => {
+                    modal.classList.remove('active');
+                    btnYes.removeEventListener('click', yesFn);
+                    btnNo.removeEventListener('click', noFn);
+                    resolve(res);
+                };
+
+                const yesFn = () => cleanup(true);
+                const noFn = () => cleanup(false);
+
+                btnYes.addEventListener('click', yesFn);
+                btnNo.addEventListener('click', noFn);
+            });
+        }
+
+        function renderUsers() {
+            const users = JSON.parse(localStorage.getItem('alpitel_users')) || {};
+            userList.innerHTML = '';
+
+            Object.keys(users).forEach(username => {
+                const u = users[username];
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #f8fafc';
+                row.innerHTML = `
+                    <td style="padding: 12px; font-weight: 600;">${u.name}</td>
+                    <td style="padding: 12px; color: var(--gray);">${u.re || '---'}</td>
+                    <td style="padding: 12px;"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${username}</code></td>
+                    <td style="padding: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 800; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; color: var(--gray);">
+                            ${u.role.toUpperCase()}
+                        </span>
+                    </td>
+                    <td style="padding: 12px;">
+                        ${username !== 'admin' ? `
+                        <button onclick="deleteUser('${username}')" style="background: none; border: none; color: var(--secondary); cursor: pointer;" class="material-icons">delete</button>
+                        ` : '<span style="color: #cbd5e1; font-size: 0.8rem;">Sistema</span>'}
+                    </td>
+                `;
+                userList.appendChild(row);
+            });
+        }
+
+        userForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('new-name').value;
+            const re = document.getElementById('new-re').value;
+            const user = document.getElementById('new-user').value.toLowerCase().trim();
+            const role = document.getElementById('new-role').value;
+
+            const users = JSON.parse(localStorage.getItem('alpitel_users')) || {};
+
+            if (users[user]) {
+                showToast('Este login já existe!', 'error');
+                return;
+            }
+
+            // Gerar Senha Aleatória de 6 dígitos
+            const tempPass = Math.floor(100000 + Math.random() * 900000).toString();
+
+            users[user] = { 
+                name, 
+                re, 
+                password: tempPass, 
+                role,
+                mustChangePass: true // Flag para forçar troca
+            };
+            localStorage.setItem('alpitel_users', JSON.stringify(users));
+            
+            userForm.reset();
+            renderUsers();
+            
+            // Mostrar Modal com a senha
+            document.getElementById('generated-pass').textContent = tempPass;
+            document.getElementById('password-modal').classList.add('active');
+            
+            showToast('Usuário cadastrado com sucesso!');
+        });
+
+        window.deleteUser = async function(username) {
+            if (await openConfirm(`Tem certeza que deseja excluir o acesso de ${username}?`)) {
+                const users = JSON.parse(localStorage.getItem('alpitel_users')) || {};
+                delete users[username];
+                localStorage.setItem('alpitel_users', JSON.stringify(users));
+                renderUsers();
+                showToast('Acesso removido.', 'error');
+            }
+        }
+
+        renderUsers();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-List Veicular - Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <style>
+        .checklist-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .checklist-form {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+        .section-title:first-child { margin-top: 0; }
+        
+        .check-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .check-item label {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+        
+        /* Controles de Status */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 54px;
+            height: 30px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e2e8f0;
+            transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px; width: 22px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Sistema de Busca e Autocomplete */
+        .autocomplete-container { position: relative; }
+        .autocomplete-results {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0; right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            display: none;
+            padding: 5px;
+        }
+        .autocomplete-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .autocomplete-item:hover { background: #f1f5f9; }
+        .autocomplete-item strong { 
+            color: #1a1a1a; 
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .autocomplete-item span { 
+            font-size: 0.85rem; 
+            color: #64748b; 
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .autocomplete-item.selected {
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Menu de Ações (Action Sheet) */
+        .fab-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .fab-overlay.active { display: block; opacity: 1; }
+
+        .action-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
+            z-index: 2001;
+            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+        }
+        .action-sheet.active { bottom: 0; }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 10px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+        .action-item:hover { background: #f8fafc; }
+        .action-item span.icon {
+            width: 40px; height: 40px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--dark);
+        }
+        .action-item span.text { font-weight: 700; font-size: 1.1rem; }
+
+        .btn-close-fab {
+            width: 60px; height: 60px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 20px auto 10px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+            transition: transform 0.2s;
+            border: none;
+        }
+        .btn-close-fab:hover { transform: scale(1.1); }
+
+        /* Gerenciamento de Estados do Formulário */
+        #checklist-form-content, #checklist-options-list { display: none; }
+        #checklist-form-content.active, #checklist-options-list.active { display: block; }
+
+        /* Listagem de Modelos de Inspeção */
+        .checklist-selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+        .checklist-selection-header h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1.2;
+            max-width: 80%;
+        }
+        .checklist-selection-header .btn-close-list {
+            background: none;
+            border: none;
+            color: #1a1a1a;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus {
+            border-color: var(--primary);
+        }
+
+        .option-card {
+            background: white;
+            padding: 18px 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-card:hover { background: #f8fafc; padding-left: 10px; }
+        .option-card:last-child { border-bottom: none; }
+        
+        .option-card .icon-box {
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            color: #1a1a1a;
+        }
+        .option-card .option-info { flex: 1; }
+        .option-card .option-info h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+        .option-card .option-info p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .option-card .chevron { color: #cbd5e1; }
+
+        /* Configurações Iniciais do Veículo */
+        #pre-checklist-screen { display: none !important; }
+        #pre-checklist-screen.active { display: block !important; }
+
+        .pre-checklist-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+
+        .form-group-selection {
+            margin-bottom: 25px;
+        }
+        .form-group-selection label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+        .form-group-selection label .material-icons {
+            font-size: 1.5rem;
+        }
+
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            outline: none;
+            cursor: pointer;
+            background: #fff;
+        }
+        .select-wrapper::after {
+            content: '\e5cf';
+            font-family: 'Material Icons';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            pointer-events: none;
+            font-size: 1.5rem;
+        }
+
+        .btn-start-inspection {
+            width: 100%;
+            padding: 18px;
+            background: #8cd4be;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .btn-start-inspection:hover {
+            background: #76c0aa;
+        }
+
+        .odometer-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            padding: 10px 0;
+            outline: none;
+            background: transparent;
+        }
+
+        /* Interface de Nível de Combustível */
+        #fuel-level-screen { display: none !important; }
+        #fuel-level-screen.active { display: block !important; }
+
+        .fuel-pump-box {
+            text-align: center;
+            padding: 20px 0;
+            color: #64748b;
+        }
+        .fuel-pump-box .material-icons {
+            font-size: 80px;
+            margin-bottom: 10px;
+        }
+        .fuel-pump-box p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #64748b;
+            max-width: 250px;
+            margin: 0 auto;
+            line-height: 1.4;
+        }
+
+        .fuel-slider-container {
+            margin: 40px 0;
+            position: relative;
+            padding: 0 10px;
+        }
+        .fuel-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+        .fuel-labels span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            position: relative;
+            width: 30px;
+            text-align: center;
+        }
+        .fuel-labels span::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 10px;
+            background: #e2e8f0;
+        }
+        .fuel-labels span.empty { color: #ef4444; }
+        .fuel-labels span.full { color: #10b981; }
+
+        .fuel-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            background: linear-gradient(to right, #10b981 0%, #10b981 50%, #e2e8f0 50%, #e2e8f0 100%);
+            border-radius: 10px;
+            outline: none;
+        }
+        .fuel-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #20b2aa;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-save-fuel {
+            width: 100%;
+            padding: 18px;
+            background: #20b2aa;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        /* Fluxo de Inspeção Detalhada */
+        #checklist-inspection-screen { display: none !important; }
+        #checklist-inspection-screen.active { display: block !important; padding: 0; }
+
+        .inspection-header {
+            background: #4a4a4a;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .inspection-header h3 { font-size: 1rem; font-weight: 600; margin: 0; }
+        
+        .progress-indicator {
+            text-align: center;
+            padding: 10px;
+            background: #f1f5f9;
+        }
+        .progress-badge {
+            background: #94a3b8;
+            color: white;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .photo-section {
+            padding: 20px;
+            background: white;
+            text-align: center;
+        }
+        .btn-take-photo {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #20b2aa;
+            background: transparent;
+            color: #20b2aa;
+            border-radius: 8px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .photo-placeholder {
+            aspect-ratio: 1;
+            background: #f1f5f9;
+            border: 1px dashed #cbd5e1;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+        .photo-placeholder .material-icons { font-size: 1.2rem; margin-bottom: 4px; }
+
+        .item-details {
+            padding: 20px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .item-details .group-label { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; }
+        .item-details .group-name { font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 15px; text-transform: uppercase; }
+        .item-details .item-label { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; }
+        .item-details .item-name { font-size: 1rem; font-weight: 800; color: #1a1a1a; text-transform: uppercase; }
+
+        .inspection-warning {
+            padding: 20px;
+            text-align: center;
+            color: #0284c7;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .photo-mandatory { color: #ef4444; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.85rem; margin-top: 10px; }
+
+        .inspection-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+        }
+        .btn-inspect {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .btn-reprovar { background: #fca5a5; color: #991b1b; }
+        .btn-aprovar { background: #99f6e4; color: #065f46; }
+
+        /* Componentes de Notificação Personalizados */
+        .premium-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .premium-modal-overlay.active { display: flex; opacity: 1; }
+        
+        .premium-modal-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 24px;
+            max-width: 85%;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .premium-modal-overlay.active .premium-modal-card { transform: translateY(0); }
+        
+        .modal-icon-circle {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .modal-icon-circle .material-icons { font-size: 35px; }
+        
+        .modal-icon-circle.success { background: #ecfdf5; color: #10b981; }
+        .modal-icon-circle.error { background: #fef2f2; color: #ef4444; }
+        .modal-icon-circle.info { background: #eff6ff; color: #3b82f6; }
+        
+        .premium-modal-card h2 { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-bottom: 12px; }
+        .premium-modal-card p { font-size: 1rem; color: #64748b; line-height: 1.6; margin-bottom: 30px; }
+        
+        .btn-modal-confirm {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: #20b2aa;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-modal-confirm:active { transform: scale(0.98); }
+
+        /* Central de Monitoramento e Histórico */
+        #checklist-management-screen { 
+            display: none !important; 
+            padding: 0; 
+            background: #f8fafc; 
+            min-height: 100vh;
+        }
+        #checklist-management-screen.active { display: block !important; animation: slideUpMgmt 0.4s ease; }
+
+        }
+
+        @media (max-width: 768px) {
+            .mgmt-top-bar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
+            .mgmt-logo { transform: scale(0.85); transform-origin: left; }
+            .mgmt-tabs { overflow-x: auto; padding-bottom: 5px; gap: 10px; }
+            .mgmt-tab { padding: 8px 15px; font-size: 0.8rem; flex-shrink: 0; min-width: 100px; }
+            .mgmt-card { padding: 15px; margin: 10px; }
+            #mgmt-list { padding: 10px 0; }
+        }
+
+        .mgmt-full-header {
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .mgmt-top-bar {
+            padding: 22px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .mgmt-top-bar .title-box { display: flex; align-items: center; gap: 15px; }
+        
+        /* Branding e Logotipo Institucional */
+        .mgmt-logo {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .mgmt-logo-text {
+            display: flex;
+            align-items: baseline;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+        .logo-alpitel { color: #ffffff; }
+        .logo-alpitel .letter-i { 
+            color: #10b981; 
+            position: relative;
+            display: inline-block;
+        }
+        .logo-alpitel .letter-i::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #ef4444;
+            border-radius: 1px;
+        }
+        .logo-checklist { color: #10b981; margin-left: 12px; font-weight: 800; font-size: 1.1rem; letter-spacing: 0px; }
+        .logo-underline {
+            height: 4px;
+            background: #ef4444;
+            width: 100%;
+            border-radius: 2px;
+        }
+
+        .mgmt-top-bar .material-icons.close-icon { 
+            cursor: pointer; 
+            opacity: 0.7; 
+            transition: opacity 0.2s; 
+            font-size: 28px;
+            margin-top: -10px;
+        }
+
+        .mgmt-tabs-row {
+            display: flex;
+            padding: 0 10px;
+        }
+        .mgmt-tab {
+            flex: 1;
+            padding: 22px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+        }
+        .mgmt-tab.active { color: #fbbf24; }
+        .mgmt-tab .material-icons { font-size: 28px; transition: transform 0.3s; }
+        .mgmt-tab.active .material-icons { transform: translateY(-3px); }
+        .mgmt-tab span.tab-text { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .mgmt-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 15%;
+            width: 70%;
+            height: 4px;
+            background: #fbbf24;
+            border-radius: 4px 4px 0 0;
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        .mgmt-tab.active::after { transform: scaleX(1); }
+
+        .mgmt-search-container {
+            padding: 20px;
+            background: transparent;
+        }
+        .mgmt-search-box {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 14px 22px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .mgmt-search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 1rem;
+            color: #1e293b;
+            background: transparent;
+        }
+        .mgmt-search-box .material-icons { color: #94a3b8; font-size: 20px; }
+
+        .mgmt-counter {
+            padding: 0 25px 15px;
+            font-size: 0.85rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .mgmt-list {
+            padding: 0 15px 30px;
+        }
+        .mgmt-card {
+            background: white;
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+            border: 1px solid #f1f5f9;
+            transition: transform 0.2s;
+        }
+        .mgmt-card:active { transform: scale(0.98); }
+
+        .mgmt-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .mgmt-card-header strong { font-size: 1.05rem; color: #1e293b; font-weight: 800; }
+        .mgmt-card-header .date { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+        
+        .mgmt-card-body { 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mgmt-info-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #64748b; }
+        .mgmt-info-row .material-icons { font-size: 16px; color: #cbd5e1; }
+        
+        .status-badge {
+            align-self: flex-start;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        .badge-andamento { background: #eff6ff; color: #3b82f6; }
+        .badge-pendente { background: #fffbeb; color: #d97706; }
+        .badge-terminado { background: #ecfdf5; color: #10b981; }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="dashboard.html" class="material-icons" style="text-decoration: none; color: var(--dark);">arrow_back</a>
+                <h1>ALP<span>I</span>TEL <span>CHECK-LIST VEICULAR</span></h1>
+            </div>
+            <div class="user-info">
+                <span id="user-display" style="font-weight: 600; font-size: 0.9rem; color: var(--gray);">Carregando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main" style="margin-top: 20px;">
+        <div class="checklist-container">
+            <div id="dashboard-main-view">
+                <!-- Informações do Usuário -->
+                <div class="profile-section" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <div class="profile-pic" style="background: #f1f5f9; border-color: #cbd5e1;">
+                        <span class="material-icons" style="color: #64748b;">person</span>
+                    </div>
+                    <div class="profile-info">
+                        <h2 style="color: var(--dark); font-size: 1.1rem;">Olá, <span id="profile-name">USUÁRIO</span>!</h2>
+                        <p id="greeting-text" style="color: var(--gray); font-size: 0.85rem;">Carregando...</p>
+                    </div>
+                    <span class="material-icons" id="btn-open-management" style="margin-left: auto; color: #cbd5e1; cursor: pointer;">chevron_right</span>
+                </div>
+
+                <!-- Indicadores de Status da Frota -->
+                <div class="sofit-grid" style="margin-bottom: 40px;">
+                    <div class="sofit-card green" onclick="openManagement('andamento')">
+                        <div class="card-body">
+                            <span class="material-icons icon-main">check_circle</span>
+                            <h3>Sem Pendências</h3>
+                            <p>em aberto</p>
+                        </div>
+                        <div class="card-footer">TUDO CERTO!</div>
+                    </div>
+                    <div class="sofit-card green" onclick="openManagement('terminado')">
+                        <div class="card-body">
+                            <span class="material-icons icon-main">gavel</span>
+                            <h3>Sem infrações</h3>
+                            <p>em menos de 1 ano</p>
+                        </div>
+                        <div class="card-footer">TUDO CERTO!</div>
+                    </div>
+                    <div class="sofit-card blue" onclick="openManagement('andamento')">
+                        <div class="card-body" style="padding: 15px;">
+                            <span class="material-icons icon-main" style="font-size: 35px;">local_gas_station</span>
+                            <h3 style="font-size: 1rem;">0 km/l</h3>
+                            <p>média consumo</p>
+                        </div>
+                        <div class="card-footer">VER MAIS</div>
+                    </div>
+                    <div class="sofit-card green" onclick="openManagement('andamento')">
+                        <div class="card-body">
+                            <span class="material-icons icon-main">minor_crash</span>
+                            <h3>Sem sinistros</h3>
+                            <p>em menos de 1 ano</p>
+                        </div>
+                        <div class="card-footer">PARABÉNS!</div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="checklist-form" class="checklist-form">
+                <div id="dynamic-checklist-content">
+                    <div id="form-placeholder" style="text-align: center; color: var(--gray); padding: 40px;">
+                        <span class="material-icons" style="font-size: 48px; color: #cbd5e1; margin-bottom: 15px; display: block;">touch_app</span>
+                        <p>Clique no botão de <strong>+</strong> para iniciar uma nova inspeção.</p>
+                    </div>
+
+                    <div id="checklist-form-content">
+                        <div style="text-align: center; color: var(--gray); padding: 40px;">
+                            <p>Preparando novo sistema de inspeção...</p>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Opções de Check-List -->
+                    <div id="checklist-options-list">
+                        <div class="checklist-selection-header">
+                            <h2>Selecione o modelo de Checklist para executar</h2>
+                            <button type="button" class="btn-close-list" onclick="closeChecklistOptions()">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+
+                        <div class="search-box">
+                            <input type="text" id="checklist-search" placeholder="Digite o nome do modelo">
+                        </div>
+
+                        <div id="options-container">
+                            <div class="option-card" data-title="01 SAÍDA BASE - DIÁRIO OBRIGATÓRIO - PESADO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>01 SAÍDA BASE - DIÁRIO OBRIGATÓRIO - PESADO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="02 ENTRADA BASE - DIÁRIO OBRIGATÓRIO - PESADO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>02 ENTRADA BASE - DIÁRIO OBRIGATÓRIO - PESADO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="03 SAÍDA BASE - DIÁRIO OBRIGATÓRIO LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>03 SAÍDA BASE - DIÁRIO OBRIGATÓRIO LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="03 SAÍDA - Check List Veículo - COP.ALP.FRT.REG.008">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info">
+                                    <h4>03 SAÍDA - Check List Veículo - COP.ALP.FRT.REG.008</h4>
+                                    <p>COP.ALP.FRT.REG.008</p>
+                                </div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="04 ENTRADA BASE - DIÁRIO OBRIGATÓRIO LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>04 ENTRADA BASE - DIÁRIO OBRIGATÓRIO LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="04 ENTRADA - Check List Veículo - COP.ALP.FRT.REG.008">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info">
+                                    <h4>04 ENTRADA - Check List Veículo - COP.ALP.FRT.REG.008</h4>
+                                    <p>COP.ALP.FRT.REG.008</p>
+                                </div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="05: SAÍDA VEÍCULO PARA MANUTENÇÃO - OFICINA">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>05: SAÍDA VEÍCULO PARA MANUTENÇÃO - OFICINA</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="06: ENTRADA VEÍCULO MANUTENÇÃO - OFICINA">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>06: ENTRADA VEÍCULO MANUTENÇÃO - OFICINA</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="07 SAÍDA BASE TELECOM - Check List Veículo">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>07 SAÍDA BASE TELECOM - Check List Veículo</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="08 ENTRADA BASE TELECOM - Check List Veículo">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>08 ENTRADA BASE TELECOM - Check List Veículo</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="09 SAÍDA DIÁRIO SOC - LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>09 SAÍDA DIÁRIO SOC - LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="10 ENTRADA DIÁRIO SOC - LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>10 ENTRADA DIÁRIO SOC - LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="11 SAÍDA DIÁRIO SOT E SOC - PESADO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>11 SAÍDA DIÁRIO SOT E SOC - PESADO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="12 ENTRADA DIÁRIO SOT E SOC- PESADO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>12 ENTRADA DIÁRIO SOT E SOC- PESADO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="14 - SAÍDA DIÁRIO SOT - LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>14 - SAÍDA DIÁRIO SOT - LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="15 - ENTRADA DIÁRIO SOT - LEVE">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>15 - ENTRADA DIÁRIO SOT - LEVE</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="Cópia de 03 SAÍDA - Check List Veículo - COP.ALP.FRT.REG.008">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info">
+                                    <h4>Cópia de 03 SAÍDA - Check List Veículo - COP.ALP.FRT.REG.008</h4>
+                                    <p>COP.ALP.FRT.REG.008</p>
+                                </div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="ENTRADA DIÁRIO MOTO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>ENTRADA DIÁRIO MOTO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                            <div class="option-card" data-title="SAÍDA DIÁRIO MOTO">
+                                <div class="icon-box"><span class="material-icons">assignment_turned_in</span></div>
+                                <div class="option-info"><h4>SAÍDA DIÁRIO MOTO</h4></div>
+                                <div class="chevron"><span class="material-icons">chevron_right</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tela de Pré-Checklist -->
+                    <div id="pre-checklist-screen">
+                        <div class="checklist-selection-header">
+                            <h2>Dados da Inspeção</h2>
+                            <button type="button" class="btn-close-list" onclick="backToModels()">
+                                <span class="material-icons">arrow_back</span>
+                            </button>
+                        </div>
+                        <div class="pre-checklist-card">
+                            <div class="form-group-selection">
+                                <label><span class="material-icons">directions_car</span> Veículo:</label>
+                                <div class="select-wrapper">
+                                    <input type="text" id="select-veiculo" placeholder="Selecione ou digite uma opção" readonly>
+                                    <div id="veiculo-results" class="autocomplete-results"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-selection">
+                                <label><span class="material-icons">person</span> Colaborador:</label>
+                                <div class="select-wrapper">
+                                    <input type="text" id="select-colaborador" placeholder="Selecione ou digite uma opção" readonly>
+                                    <div id="colaborador-results" class="autocomplete-results"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-selection">
+                                <label><span class="material-icons">speed</span> Hodômetro:</label>
+                                <input type="number" id="input-odometro" class="odometer-input" placeholder="0,0" step="0.1">
+                            </div>
+
+                            <button type="button" class="btn-start-inspection" id="btn-start-final">
+                                <span class="material-icons">play_arrow</span> Iniciar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tela de Nível de Combustível -->
+                    <div id="fuel-level-screen">
+                        <div class="checklist-selection-header">
+                            <h2>Nível do tanque:</h2>
+                            <button type="button" class="btn-close-list" onclick="backToPreChecklist()">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                        
+                        <div class="pre-checklist-card">
+                            <div class="fuel-pump-box">
+                                <span class="material-icons">local_gas_station</span>
+                                <p>Informe o nível de combustível do veículo</p>
+                            </div>
+
+                            <div class="fuel-slider-container">
+                                <div class="fuel-labels">
+                                    <span class="empty">E</span>
+                                    <span>1/4</span>
+                                    <span>1/2</span>
+                                    <span>3/4</span>
+                                    <span class="full">F</span>
+                                </div>
+                                <input type="range" min="0" max="100" value="50" class="fuel-slider" id="fuel-range">
+                            </div>
+
+                            <button type="button" class="btn-save-fuel" id="btn-save-fuel-final">
+                                <span class="material-icons">save</span> Salvar e avançar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tela de Inspeção Detalhada -->
+                    <div id="checklist-inspection-screen">
+                        <div class="inspection-header">
+                            <span class="material-icons">directions_car</span>
+                            <h3>Executar Checklist</h3>
+                            <span class="material-icons" onclick="closeChecklistOptions()">close</span>
+                        </div>
+
+                        <div class="progress-indicator">
+                            <span class="progress-badge" id="inspection-progress">1 de 50</span>
+                        </div>
+
+                        <div class="photo-section">
+                            <input type="file" accept="image/*" capture="camera" id="camera-input" style="display:none">
+                            <button type="button" class="btn-take-photo" id="btn-trigger-camera">
+                                <span class="material-icons">photo_camera</span> Tirar foto do item
+                            </button>
+                            <div class="photo-grid" id="inspection-photo-grid">
+                                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                            </div>
+                        </div>
+
+                        <div class="item-details">
+                            <div class="group-label">Grupo:</div>
+                            <div class="group-name" id="item-group">CARREGANDO...</div>
+                            <div class="item-label">Item:</div>
+                            <div class="item-name" id="item-title">CARREGANDO...</div>
+                        </div>
+
+                        <div class="inspection-warning">
+                            <div><span class="material-icons" style="font-size: 1.2rem; vertical-align: middle;">edit</span> Edite o(s) campo(s) obrigatório(s) para enviar uma nova resposta</div>
+                            <div class="photo-mandatory"><span class="material-icons" style="font-size: 1rem;">image</span> Foto obrigatória para prosseguir</div>
+                        </div>
+
+                        <div class="inspection-footer">
+                            <button type="button" class="btn-inspect btn-reprovar" onclick="nextItem(false)">
+                                <span class="material-icons">thumb_down</span> Reprovar
+                            </button>
+                            <button type="button" class="btn-inspect btn-aprovar" onclick="nextItem(true)">
+                                <span class="material-icons">thumb_up</span> Aprovar
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Central de Gerenciamento de Checklists -->
+                    <div id="checklist-management-screen">
+                        <div class="mgmt-full-header">
+                            <div class="mgmt-top-bar">
+                                <div class="title-box">
+                                    <div class="mgmt-logo">
+                                        <div class="mgmt-logo-text">
+                                            <span class="logo-alpitel">ALP<span class="letter-i">I</span>TEL</span>
+                                            <span class="logo-checklist">CHECK-LIST VEICULAR</span>
+                                        </div>
+                                        <div class="logo-underline"></div>
+                                    </div>
+                                </div>
+                                <span class="material-icons close-icon" onclick="closeChecklistOptions()">close</span>
+                            </div>
+                            <div class="mgmt-tabs-row">
+                                <div class="mgmt-tab active" onclick="switchTab('andamento')">
+                                    <span class="material-icons">pending_actions</span>
+                                    <span class="tab-text">Em andamento</span>
+                                </div>
+                                <div class="mgmt-tab" onclick="switchTab('pendente')">
+                                    <span class="material-icons">report_problem</span>
+                                    <span class="tab-text">Pendentes</span>
+                                </div>
+                                <div class="mgmt-tab" onclick="switchTab('terminado')">
+                                    <span class="material-icons">task_alt</span>
+                                    <span class="tab-text">Terminados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mgmt-search-container">
+                            <div class="mgmt-search-box">
+                                <input type="text" id="mgmt-search" placeholder="Nome do checklist ou do veículo">
+                                <span class="material-icons">search</span>
+                            </div>
+                        </div>
+
+                        <div class="mgmt-counter" id="mgmt-counter">0 checklists executados</div>
+
+                        <div class="mgmt-list" id="mgmt-list">
+                            <!-- Lista será preenchida via JS -->
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Botão Flutuante para Ações Rápidas -->
+            <button class="fab-button" id="btn-fab-checklist">
+                <span class="material-icons">add</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Menu Flutuante (Action Sheet) -->
+    <div class="fab-overlay" id="fab-overlay"></div>
+    <div class="action-sheet" id="action-sheet">
+        <div class="action-item" id="open-inspection">
+            <span class="icon material-icons">assignment_turned_in</span>
+            <span class="text">Checklist</span>
+            <span class="material-icons" style="margin-left: auto; color: #cbd5e1;">chevron_right</span>
+        </div>
+        
+        <button class="btn-close-fab" id="btn-close-menu">
+            <span class="material-icons">close</span>
+        </button>
+    </div>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <!-- Estrutura do Modal -->
+    <div class="premium-modal-overlay" id="premium-modal">
+        <div class="premium-modal-card">
+            <div id="modal-icon-container" class="modal-icon-circle">
+                <span id="modal-icon" class="material-icons">check</span>
+            </div>
+            <h2 id="modal-title">Título</h2>
+            <p id="modal-message">Mensagem informativa aqui.</p>
+            <button class="btn-modal-confirm" onclick="hideCustomAlert()">Entendido</button>
+        </div>
+    </div>
+
+    <script src="/auth.js"></script>
+    <script>
+        // Configurações de Dados e Frota
+        const initialFleet = [
+            { id: 1, modelo: 'Fiat Fiorino', placa: 'ALP-1020', km: 45200 },
+            { id: 2, modelo: 'Fiat Argo', placa: 'ALP-2030', km: 32150 },
+            { id: 3, modelo: 'Mercedes-Benz Cesto Aéreo', placa: 'ALP-5050', km: 12800 },
+            { id: 4, modelo: 'Volkswagen Cesto Aéreo', placa: 'ALP-3040', km: 88400 },
+            { id: 5, modelo: 'Volkswagen Munck', placa: 'ALP-9090', km: 15400 },
+            { id: 6, modelo: 'Mercedes-Benz Munck', placa: 'AWP-2312', km: 13455 }
+        ];
+        const fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || initialFleet;
+
+        const colaboradores = [
+            'Wilson Borges Xavier Junior',
+            'João Silva',
+            'Maria Oliveira',
+            'Pedro Santos',
+            'Ana Costa'
+        ];
+
+        const checklistItems = [
+            { group: 'VAZAMENTOS APARENTES', item: 'FOTO PAINEL KM ATUAL' },
+            { group: 'DOCUMENTAÇÃO', item: 'CRLV DO VEÍCULO' },
+            { group: 'DOCUMENTAÇÃO', item: 'CARTÃO DE ABASTECIMENTO' },
+            { group: 'ILUMINAÇÃO', item: 'FAROL BAIXO (LD/LE)' },
+            { group: 'ILUMINAÇÃO', item: 'FAROL ALTO (LD/LE)' },
+            { group: 'ILUMINAÇÃO', item: 'LUZ DE RÉ' },
+            { group: 'ILUMINAÇÃO', item: 'LUZ DE FREIO' },
+            { group: 'ILUMINAÇÃO', item: 'SETAS DIANTEIRAS' },
+            { group: 'ILUMINAÇÃO', item: 'SETAS TRASEIRAS' },
+            { group: 'ILUMINAÇÃO', item: 'LUZ DE PLACA' },
+            { group: 'ESTADO GERAL', item: 'PNEU DIANTEIRO DIREITO' },
+            { group: 'ESTADO GERAL', item: 'PNEU DIANTEIRO ESQUERDO' },
+            { group: 'ESTADO GERAL', item: 'PNEU TRASEIRO DIREITO' },
+            { group: 'ESTADO GERAL', item: 'PNEU TRASEIRO ESQUERDO' },
+            { group: 'ESTADO GERAL', item: 'ESTEPE' },
+            { group: 'SEGURANÇA', item: 'MACACO / CHAVE DE RODA' },
+            { group: 'SEGURANÇA', item: 'TRIÂNGULO DE SINALIZAÇÃO' },
+            { group: 'SEGURANÇA', item: 'EXTINTOR DE INCÊNDIO' },
+            { group: 'SEGURANÇA', item: 'CINTOS DE SEGURANÇA' },
+            { group: 'SEGURANÇA', item: 'LIMPADOR DE PARA-BRISA' },
+            { group: 'SEGURANÇA', item: 'BUZINA' },
+            { group: 'SEGURANÇA', item: 'RETROVISORES (INTERNO/EXTERNO)' },
+            { group: 'VAZAMENTOS', item: 'VAZAMENTO DE ÓLEO MOTOR' },
+            { group: 'VAZAMENTOS', item: 'VAZAMENTO DE FLUIDO FREIO' },
+            { group: 'VAZAMENTOS', item: 'VAZAMENTO DE ARREFECIMENTO' },
+            { group: 'MOTOR', item: 'NÍVEL DE ÓLEO MOTOR' },
+            { group: 'MOTOR', item: 'NÍVEL DE ÁGUA / ADITIVO' },
+            { group: 'MOTOR', item: 'BATERIA (BORNES/FIXAÇÃO)' },
+            { group: 'ESTADO GERAL', item: 'CABINE (LIMPEZA)' },
+            { group: 'ESTADO GERAL', item: 'CARROCERIA / CAÇAMBA' },
+            { group: 'ESTADO GERAL', item: 'ADESIVAGEM DA EMPRESA' },
+            { group: 'FERRAMENTAL', item: 'ESCADA (FIXAÇÃO/ESTADO)' },
+            { group: 'OPERACIONAL', item: 'CESTO AÉREO (SE HOUVER)' },
+            { group: 'OPERACIONAL', item: 'SAPATAS DE ESTABILIZAÇÃO' },
+            { group: 'OPERACIONAL', item: 'COMANDO HIDRÁULICO' },
+            { group: 'OPERACIONAL', item: 'MANGUEIRAS HIDRÁULICAS' },
+            { group: 'EPI / EPC', item: 'LUVA ISOLANTE' },
+            { group: 'EPI / EPC', item: 'BASTÃO DE MANOBRA' },
+            { group: 'EPI / EPC', item: 'DETECTOR DE TENSÃO' },
+            { group: 'EPI / EPC', item: 'ATERRAMENTO TEMPORÁRIO' },
+            { group: 'SINALIZAÇÃO', item: 'CONES DE SINALIZAÇÃO' },
+            { group: 'SINALIZAÇÃO', item: 'FITAS DE DELIMITAÇÃO' },
+            { group: 'FERRAMENTAL', item: 'LANTERNA DE MÃO' },
+            { group: 'SEGURANÇA', item: 'KIT DE PRIMEIROS SOCORROS' },
+            { group: 'SEGURANÇA', item: 'CALÇOS DE RODA' },
+            { group: 'OUTROS', item: 'GPS / RASTREADOR' },
+            { group: 'CONFORTO', item: 'AR CONDICIONADO' },
+            { group: 'ESTADO GERAL', item: 'VIDROS (TRINCAS/ESTADO)' },
+            { group: 'ESTADO GERAL', item: 'LATARIA (AMASSADOS/RISCOS)' },
+            { group: 'FINALIZAÇÃO', item: 'FOTO FINAL DO VEÍCULO' }
+        ];
+
+        let currentItemIndex = 0;
+
+        const session = JSON.parse(localStorage.getItem('alpitel_session'));
+        if (!session) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('user-display').textContent = session.name;
+            document.getElementById('profile-name').textContent = session.name;
+            
+            const hora = new Date().getHours();
+            let saudacao = "";
+            if (hora >= 5 && hora < 12) saudacao = "Tenha um bom dia!";
+            else if (hora >= 12 && hora < 18) saudacao = "Tenha uma boa tarde!";
+            else saudacao = "Tenha uma boa noite!";
+            document.getElementById('greeting-text').textContent = saudacao;
+        }
+
+        const checklistForm = document.getElementById('checklist-form');
+        if (checklistForm) {
+            checklistForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        const fabBtn = document.getElementById('btn-fab-checklist');
+        const overlay = document.getElementById('fab-overlay');
+        const sheet = document.getElementById('action-sheet');
+        const closeBtn = document.getElementById('btn-close-menu');
+        const openInspection = document.getElementById('open-inspection');
+
+        function toggleMenu() {
+            overlay.classList.toggle('active');
+            sheet.classList.toggle('active');
+        }
+
+        fabBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+
+        const checklistSearch = document.getElementById('checklist-search');
+        const optionCards = document.querySelectorAll('.option-card');
+
+        if (checklistSearch) {
+            checklistSearch.addEventListener('input', () => {
+                const term = checklistSearch.value.toLowerCase();
+                optionCards.forEach(card => {
+                    const title = card.getAttribute('data-title').toLowerCase();
+                    if (title.includes(term)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function closeChecklistOptions() {
+            document.getElementById('checklist-options-list').classList.remove('active');
+            document.getElementById('pre-checklist-screen').classList.remove('active');
+            document.getElementById('fuel-level-screen').classList.remove('active');
+            document.getElementById('checklist-inspection-screen').classList.remove('active');
+            document.getElementById('checklist-management-screen').classList.remove('active');
+            document.getElementById('dashboard-main-view').style.display = 'block';
+            document.getElementById('form-placeholder').style.display = 'block';
+        }
+
+        function backToModels() {
+            document.getElementById('pre-checklist-screen').classList.remove('active');
+            document.getElementById('checklist-options-list').classList.add('active');
+        }
+
+        function backToPreChecklist() {
+            document.getElementById('fuel-level-screen').classList.remove('active');
+            document.getElementById('pre-checklist-screen').classList.add('active');
+        }
+
+        openInspection.addEventListener('click', () => {
+            toggleMenu();
+            document.getElementById('form-placeholder').style.display = 'none';
+            document.getElementById('pre-checklist-screen').classList.remove('active');
+            document.getElementById('checklist-options-list').classList.add('active');
+            document.getElementById('checklist-options-list').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        optionCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const modelName = card.getAttribute('data-title');
+                document.getElementById('dashboard-main-view').style.display = 'none';
+                document.getElementById('checklist-options-list').classList.remove('active');
+                const preScreen = document.getElementById('pre-checklist-screen');
+                preScreen.classList.add('active');
+                preScreen.scrollIntoView({ behavior: 'smooth' });
+                
+                window.currentInspectionData = {
+                    modelo: modelName,
+                    respostas: [],
+                    fotos: []
+                };
+            });
+        });
+
+        const veiculoInput = document.getElementById('select-veiculo');
+        const veiculoResults = document.getElementById('veiculo-results');
+        const colaboradorInput = document.getElementById('select-colaborador');
+        const colaboradorResults = document.getElementById('colaborador-results');
+
+        function setupSelect(input, results, data, isVeiculo = false) {
+            input.addEventListener('click', () => {
+                results.innerHTML = '';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    if (isVeiculo) {
+                        div.innerHTML = `<strong>${item.placa}</strong><span>${item.modelo}</span>`;
+                        div.onclick = (e) => {
+                            e.stopPropagation();
+                            input.value = `${item.placa} - ${item.modelo}`;
+                            results.style.display = 'none';
+                            const odomInput = document.getElementById('input-odometro');
+                            if (odomInput) {
+                                odomInput.value = item.km || 0;
+                            }
+                        };
+                    } else {
+                        div.innerHTML = `<strong>${item}</strong>`;
+                        div.onclick = (e) => {
+                            e.stopPropagation();
+                            input.value = item;
+                            results.style.display = 'none';
+                        };
+                    }
+                    results.appendChild(div);
+                });
+                results.style.display = 'block';
+            });
+        }
+
+        setupSelect(veiculoInput, veiculoResults, fleet, true);
+        setupSelect(colaboradorInput, colaboradorResults, colaboradores);
+
+        document.addEventListener('click', (e) => {
+            if (!veiculoInput.contains(e.target)) veiculoResults.style.display = 'none';
+            if (!colaboradorInput.contains(e.target)) colaboradorResults.style.display = 'none';
+        });
+
+        document.getElementById('btn-start-final').addEventListener('click', () => {
+            if (!veiculoInput.value || !colaboradorInput.value) {
+                showCustomAlert('Ops!', 'Selecione o veículo e o colaborador.', 'info');
+                return;
+            }
+
+            const activeChecklists = JSON.parse(localStorage.getItem('alpitel_active') || '[]');
+            const newItem = {
+                id: Date.now(),
+                placa: veiculoInput.value.split(' - ')[0],
+                modelo: veiculoInput.value.split(' - ')[1],
+                tipo: window.currentInspectionData.modelo.split(' - ')[0],
+                status: 'andamento',
+                data: new Date().toLocaleString('pt-BR').substring(0, 16)
+            };
+            activeChecklists.push(newItem);
+            localStorage.setItem('alpitel_active', JSON.stringify(activeChecklists));
+            window.currentInspectionId = newItem.id;
+
+            document.getElementById('pre-checklist-screen').classList.remove('active');
+            document.getElementById('fuel-level-screen').classList.add('active');
+            document.getElementById('fuel-level-screen').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('btn-save-fuel-final').addEventListener('click', () => {
+            document.getElementById('fuel-level-screen').classList.remove('active');
+            document.getElementById('checklist-inspection-screen').classList.add('active');
+            renderInspectionItem();
+        });
+
+        function renderInspectionItem() {
+            const item = checklistItems[currentItemIndex];
+            document.getElementById('inspection-progress').textContent = `${currentItemIndex + 1} de ${checklistItems.length}`;
+            document.getElementById('item-group').textContent = item.group;
+            document.getElementById('item-title').textContent = item.item;
+            document.getElementById('inspection-photo-grid').innerHTML = `
+                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+                <div class="photo-placeholder"><span class="material-icons">image</span>Foto</div>
+            `;
+            document.getElementById('checklist-inspection-screen').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function nextItem(aprovado) {
+            window.currentInspectionData.respostas.push({
+                item: checklistItems[currentItemIndex].item,
+                grupo: checklistItems[currentItemIndex].group,
+                aprovado: aprovado
+            });
+
+            if (currentItemIndex < checklistItems.length - 1) {
+                currentItemIndex++;
+                renderInspectionItem();
+            } else {
+                saveFinalChecklist();
+            }
+        }
+
+        function saveFinalChecklist() {
+            const finalData = {
+                id: window.currentInspectionId || Date.now(),
+                veiculo: veiculoInput.value,
+                colaborador: colaboradorInput.value,
+                hodometro: document.getElementById('input-odometro').value,
+                combustivel: document.getElementById('fuel-range').value,
+                modelo: window.currentInspectionData.modelo,
+                status: 'terminado',
+                data: new Date().toLocaleString('pt-BR'),
+                placa: veiculoInput.value.split(' - ')[0],
+                tipo: window.currentInspectionData.modelo.split(' - ')[0],
+                detalhes: window.currentInspectionData.respostas
+            };
+
+            const activeChecklists = JSON.parse(localStorage.getItem('alpitel_active') || '[]');
+            const updatedActive = activeChecklists.filter(item => item.id !== window.currentInspectionId);
+            localStorage.setItem('alpitel_active', JSON.stringify(updatedActive));
+
+            const localHistory = JSON.parse(localStorage.getItem('alpitel_checklists') || '[]');
+            localHistory.push(finalData);
+            localStorage.setItem('alpitel_checklists', JSON.stringify(localHistory));
+
+            showCustomAlert('Concluído!', 'O checklist foi salvo no histórico.', 'success', () => {
+                location.reload();
+            });
+        }
+
+        const cameraBtn = document.getElementById('btn-trigger-camera');
+        const cameraInput = document.getElementById('camera-input');
+        const photoGrid = document.getElementById('inspection-photo-grid');
+
+        if (cameraBtn && cameraInput) {
+            cameraBtn.addEventListener('click', () => cameraInput.click());
+            cameraInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const placeholders = photoGrid.querySelectorAll('.photo-placeholder');
+                        if (placeholders.length > 0) {
+                            const first = placeholders[0];
+                            first.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
+                            first.classList.remove('photo-placeholder');
+                            first.style.padding = '0';
+                        }
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        const fuelRange = document.getElementById('fuel-range');
+        if (fuelRange) {
+            fuelRange.addEventListener('input', () => {
+                const val = fuelRange.value;
+                fuelRange.style.background = `linear-gradient(to right, #10b981 0%, #10b981 ${val}%, #e2e8f0 ${val}%, #e2e8f0 100%)`;
+            });
+        }
+
+        let modalCallback = null;
+        function showCustomAlert(title, message, type = 'info', callback = null) {
+            const modal = document.getElementById('premium-modal');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const icon = document.getElementById('modal-icon');
+            const titleEl = document.getElementById('modal-title');
+            const messageEl = document.getElementById('modal-message');
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            modalCallback = callback;
+
+            // Reset classes
+            iconContainer.className = 'modal-icon-circle ' + type;
+            
+            if (type === 'success') icon.textContent = 'check_circle';
+            else if (type === 'error') icon.textContent = 'error';
+            else icon.textContent = 'info';
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function hideCustomAlert() {
+            const modal = document.getElementById('premium-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                if (modalCallback) {
+                    modalCallback();
+                    modalCallback = null;
+                }
+            }, 300);
+        }
+
+        // Lógica da Central de Gerenciamento
+        const btnOpenMgmt = document.getElementById('btn-open-management');
+        
+        function openManagement(tab = 'andamento') {
+            document.getElementById('dashboard-main-view').style.display = 'none';
+            document.getElementById('form-placeholder').style.display = 'none';
+            document.getElementById('checklist-management-screen').classList.add('active');
+            switchTab(tab);
+        }
+
+        if (btnOpenMgmt) {
+            btnOpenMgmt.addEventListener('click', () => openManagement('andamento'));
+        }
+
+        const mgmtData = [
+            { placa: 'ALP-1020', modelo: 'Fiat Fiorino', status: 'andamento', data: '01/05 08:30', tipo: 'SAÍDA BASE' },
+            { placa: 'ALP-5050', modelo: 'Mercedes Cesto', status: 'terminado', data: '30/04 17:15', tipo: 'ENTRADA BASE' },
+            { placa: 'ALP-2030', modelo: 'Fiat Argo', status: 'pendente', data: '28/04 09:00', tipo: 'MANUTENÇÃO' }
+        ];
+
+        function switchTab(status) {
+            const tabs = document.querySelectorAll('.mgmt-tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.querySelector('.tab-text').textContent.toLowerCase().includes(status.substring(0,3))) {
+                    tab.classList.add('active');
+                }
+            });
+            renderManagementList(status);
+        }
+
+        function renderManagementList(statusFilter) {
+            const list = document.getElementById('mgmt-list');
+            const counter = document.getElementById('mgmt-counter');
+            list.innerHTML = '';
+            
+            // Busca dados reais do localStorage
+            const finished = JSON.parse(localStorage.getItem('alpitel_checklists') || '[]');
+            const active = JSON.parse(localStorage.getItem('alpitel_active') || '[]');
+            
+            // Combina com dados fakes iniciais se quiser (ou só usa os reais)
+            const allData = [...active, ...finished, ...mgmtData];
+            
+            const filtered = allData.filter(item => item.status === statusFilter);
+            counter.textContent = `${filtered.length} checklists ${statusFilter === 'andamento' ? 'em execução' : statusFilter + 's'}`;
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:50px; color:#94a3b8;">Nenhum item encontrado nesta categoria.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `mgmt-card`;
+                card.innerHTML = `
+                    <div class="mgmt-card-header">
+                        <strong>${item.placa}</strong>
+                        <span class="date">${item.data}</span>
+                    </div>
+                    <div class="mgmt-card-body">
+                        <div class="mgmt-info-row">
+                            <span class="material-icons">directions_car</span>
+                            <span>${item.modelo}</span>
+                        </div>
+                        <div class="mgmt-info-row">
+                            <span class="material-icons">assignment</span>
+                            <span>${item.tipo}</span>
+                        </div>
+                        <div class="status-badge badge-${item.status}">
+                            ${item.status === 'andamento' ? 'Em execução' : item.status}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+    </script>
+</body>
+</html>

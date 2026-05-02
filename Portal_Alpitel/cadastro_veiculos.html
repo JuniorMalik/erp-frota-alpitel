@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Veículos - Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <script src="auth.js"></script>
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-area" style="display: flex; align-items: center; gap: 15px;">
+                <a href="dashboard.html" class="material-icons" style="text-decoration: none; color: var(--dark);">arrow_back</a>
+                <h1>ALP<span>I</span>TEL <span>GESTÃO DE VEÍCULOS</span></h1>
+            </div>
+            <div class="user-info">
+                <span id="user-display" style="font-weight: 600; color: var(--gray); margin-right: 15px;">---</span>
+                <button id="logout-btn" class="btn-logout">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="welcome-text">
+            <h2>Gerenciamento da Frota</h2>
+            <p>Adicione ou remova veículos do sistema. Acesso exclusivo para Administradores.</p>
+        </div>
+
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start;">
+            <!-- Form Card -->
+            <div class="app-card" style="text-align: left;">
+                <h3 style="margin-bottom: 20px; color: var(--primary);">Novo Veículo</h3>
+                <form id="vehicle-form">
+                    <div class="input-group">
+                        <label>Base Operacional</label>
+                        <select id="v-base" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; background: white;" required>
+                            <option value="Base Leste">Base Leste</option>
+                            <option value="Base Norte">Base Norte</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Modelo / Nome</label>
+                        <input type="text" id="v-modelo" placeholder="Ex: Fiat Fiorino" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Placa</label>
+                        <input type="text" id="v-placa" placeholder="Ex: ALP-1020" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Tipo de Veículo</label>
+                        <select id="v-tipo" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; background: white;" required>
+                            <option value="Munck">Munck</option>
+                            <option value="Cesto Aéreo">Cesto Aéreo</option>
+                            <option value="Veículos Pequenos">Veículos Pequenos</option>
+                            <option value="Moto">Moto</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>KM Inicial</label>
+                        <input type="number" id="v-km" placeholder="0" required>
+                    </div>
+                    <button type="submit" class="btn-login" style="margin-top: 10px;">ADICIONAR À FROTA</button>
+                </form>
+            </div>
+
+            <!-- List Card -->
+            <div class="app-card" style="text-align: left;">
+                <h3 style="margin-bottom: 20px;">Frota Atual</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #f1f5f9; text-align: left;">
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">BASE</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">VEÍCULO</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">PLACA</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">TIPO</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">KM</th>
+                                <th style="padding: 12px; color: var(--gray); font-size: 0.8rem;">AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehicle-list">
+                            <!-- Gerado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <script>
+        const session = JSON.parse(localStorage.getItem('alpitel_session'));
+        if (session) {
+            document.getElementById('user-display').textContent = session.name;
+        }
+
+        const vehicleForm = document.getElementById('vehicle-form');
+        const vehicleList = document.getElementById('vehicle-list');
+
+        function renderVehicles() {
+            const initialFleet = [
+                { id: 1, modelo: 'Fiat Fiorino', placa: 'ALP-1020', status: 'disponivel', km: 45200, tipo: 'Veículos Pequenos' },
+                { id: 2, modelo: 'Fiat Argo', placa: 'ALP-2030', status: 'disponivel', km: 32150, tipo: 'Veículos Pequenos' },
+                { id: 3, modelo: 'Mercedes-Benz Cesto Aéreo', placa: 'ALP-5050', status: 'em-servico', km: 12800, tipo: 'Cesto Aéreo' },
+                { id: 4, modelo: 'Volkswagen Cesto Aéreo', placa: 'ALP-3040', status: 'manutencao', km: 88400, tipo: 'Cesto Aéreo' },
+                { id: 5, modelo: 'Volkswagen Munck', placa: 'ALP-9090', status: 'disponivel', km: 15400, tipo: 'Munck' },
+                { id: 6, modelo: 'Mercedes-Benz Munck', placa: 'AWP-2312', status: 'disponivel', km: 13455, tipo: 'Munck' },
+            ];
+
+            const fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || initialFleet;
+            vehicleList.innerHTML = '';
+
+            fleet.forEach(v => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #f8fafc';
+                row.innerHTML = `
+                    <td style="padding: 12px;"><span style="font-size: 0.7rem; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569;">${v.base || 'N/A'}</span></td>
+                    <td style="padding: 12px; font-weight: 600;">${v.modelo}</td>
+                    <td style="padding: 12px;"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${v.placa}</code></td>
+                    <td style="padding: 12px;"><span style="font-size: 0.75rem; font-weight: 700; color: var(--primary);">${v.tipo || '---'}</span></td>
+                    <td style="padding: 12px;">${parseInt(v.km).toLocaleString()} km</td>
+                    <td style="padding: 12px;">
+                        <button onclick="deleteVehicle('${v.placa}')" style="background: none; border: none; color: var(--secondary); cursor: pointer;" class="material-icons">delete</button>
+                    </td>
+                `;
+                vehicleList.appendChild(row);
+            });
+        }
+
+        vehicleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const base = document.getElementById('v-base').value;
+            const modelo = document.getElementById('v-modelo').value;
+            const placa = document.getElementById('v-placa').value.toUpperCase().trim();
+            const tipo = document.getElementById('v-tipo').value;
+            const km = parseInt(document.getElementById('v-km').value);
+
+            const fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || [];
+
+            if (fleet.find(v => v.placa === placa)) {
+                alert('Este veículo já está cadastrado!');
+                return;
+            }
+
+            fleet.push({
+                id: Date.now(),
+                base,
+                modelo,
+                placa,
+                tipo,
+                km,
+                status: 'disponivel'
+            });
+
+            localStorage.setItem('alpitel_fleet', JSON.stringify(fleet));
+            
+            vehicleForm.reset();
+            renderVehicles();
+            alert('Veículo adicionado com sucesso!');
+        });
+
+        window.deleteVehicle = function(placa) {
+            if (confirm(`Tem certeza que deseja remover o veículo ${placa} da frota?`)) {
+                let fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || [];
+                fleet = fleet.filter(v => v.placa !== placa);
+                localStorage.setItem('alpitel_fleet', JSON.stringify(fleet));
+                renderVehicles();
+            }
+        }
+
+        renderVehicles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel - Portal Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <meta name="theme-color" content="#008C45">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        .analytics-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            .analytics-section { grid-template-columns: 1fr; }
+            .chart-card { padding: 15px; }
+            .chart-container { height: 180px; }
+            .welcome-text h2 { font-size: 1.5rem; }
+        }
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .chart-card h3 {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+
+        /* Banner de Instalação Android */
+        #pwa-install-banner {
+            display: none;
+            background: linear-gradient(90deg, var(--primary) 0%, #10b981 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            animation: slideDown 0.5s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .btn-install-pwa {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1>ALP<span>I</span>TEL <span>PORTAL</span></h1>
+            <div class="user-info">
+                <span id="user-display" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important; color: #1e293b !important; font-weight: 800 !important; font-size: 0.85rem !important;">Usuário</span>
+                <button id="logout-btn" class="btn-logout">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <!-- Banner PWA -->
+        <div id="pwa-install-banner">
+            <span class="material-icons" style="font-size: 24px;">mobile_friendly</span>
+            <div style="flex: 1; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.3px;">Versão Mobile: Instale o Portal Alpitel para otimizar sua operação.</div>
+            <button class="btn-install-pwa" id="btn-pwa-main">INSTALAR AGORA</button>
+        </div>
+
+        <div class="welcome-text">
+            <h2>Hub Operacional</h2>
+            <p>Selecione o sistema ou acompanhe os indicadores abaixo:</p>
+        </div>
+
+        <div class="analytics-section" id="analytics-view">
+            <div class="chart-card">
+                <h3>Status da Frota</h3>
+                <div class="chart-container">
+                    <canvas id="fleetChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Uso de Almoxarifado (Peças)</h3>
+                <div class="chart-container">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Resumo de Inspeções</h3>
+                <div class="chart-container">
+                    <canvas id="checklistChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="apps-grid" id="apps-grid">
+            <!-- Os cards dos sistemas serão inseridos dinamicamente pelo auth.js -->
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <script src="/auth.js?v=1.0.2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const session = JSON.parse(localStorage.getItem('alpitel_session'));
+            const initUI = setInterval(() => {
+                const display = document.getElementById('user-display');
+                if (display && session) {
+                    display.textContent = session.name || session.username;
+                    display.style.setProperty('display', 'inline-block', 'important');
+                    display.style.setProperty('visibility', 'visible', 'important');
+                    display.style.setProperty('opacity', '1', 'important');
+                    display.style.setProperty('color', '#1e293b', 'important');
+                    clearInterval(initUI);
+                }
+            }, 100);
+
+            if (session) {
+                // Apenas Admin e Gestão vêem os gráficos
+                if (session.role === 'admin' || session.role === 'gestao' || session.role === 'frota') {
+                    renderAnalytics();
+                } else {
+                    const analyticsView = document.getElementById('analytics-view');
+                    if (analyticsView) analyticsView.style.display = 'none';
+                }
+            }
+        });
+
+        function renderAnalytics() {
+            const fleet = JSON.parse(localStorage.getItem('alpitel_fleet')) || [];
+            const logs = JSON.parse(localStorage.getItem('alpitel_logs')) || [];
+            const finished = JSON.parse(localStorage.getItem('alpitel_checklists')) || [];
+
+            // 1. Gráfico de Frota
+            const disponiveis = fleet.filter(v => v.status === 'disponivel').length;
+            const manutencao = fleet.length - disponiveis;
+
+            new Chart(document.getElementById('fleetChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Disponível', 'Em Reparo'],
+                    datasets: [{
+                        data: [disponiveis, manutencao],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 2. Gráfico de Almoxarifado (Simulado a partir dos logs de manutenção_fim)
+            const partsLogs = logs.filter(l => l.msg.includes('Peças utilizadas'));
+            const totalParts = partsLogs.length * 2; // Simulação de volume
+
+            new Chart(document.getElementById('stockChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                    datasets: [{
+                        label: 'Itens Consumidos',
+                        data: [12, 19, 3, totalParts || 5],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 5
+                    }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            // 3. Gráfico de Checklists
+            const totalChecklists = finished.length;
+            const approved = finished.filter(c => !JSON.stringify(c.detalhes).includes('reprovado')).length;
+            const withIssues = totalChecklists - approved;
+
+            new Chart(document.getElementById('checklistChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['100% OK', 'Com Avarias'],
+                    datasets: [{
+                        data: [approved || 1, withIssues || 0],
+                        backgroundColor: ['#059669', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // Lógica de Instalação PWA (Android/Chrome)
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('btn-pwa-main');
+
+        // Se o usuário já fechou nesta sessão, não mostra
+        if (sessionStorage.getItem('pwa_banner_closed')) {
+            installBanner.style.setProperty('display', 'none', 'important');
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            if (sessionStorage.getItem('pwa_banner_closed')) return;
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installBanner.style.display = 'none';
+        });
+
+        // Botão de Fechar (Adicionado dinamicamente para manter o HTML limpo)
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'material-icons';
+        closeBtn.textContent = 'close';
+        closeBtn.style.cssText = 'cursor:pointer; font-size: 20px; opacity: 0.7; margin-left: 10px;';
+        closeBtn.onclick = () => {
+            installBanner.style.display = 'none';
+            sessionStorage.setItem('pwa_banner_closed', 'true');
+        };
+        installBanner.appendChild(closeBtn);
+
+        // Esconde se já estiver instalado
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            installBanner.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

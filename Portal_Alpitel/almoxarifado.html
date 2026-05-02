@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almoxarifado - Alpitel</title>
+    <link rel="stylesheet" href="style_portal.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='24' y='10' width='16' height='36' fill='%23008C45'/><rect x='24' y='50' width='16' height='6' fill='%23CD212A'/></svg>">
+    <style>
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stock-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-top: 5px solid #e2e8f0;
+            transition: transform 0.2s;
+        }
+        .stock-card.low-stock { border-top-color: #ef4444; }
+        .stock-card.medium-stock { border-top-color: #f59e0b; }
+        .stock-card.good-stock { border-top-color: #10b981; }
+
+        .stock-card h3 { font-size: 1.1rem; margin-bottom: 5px; color: var(--dark); }
+        .stock-card .category { font-size: 0.75rem; text-transform: uppercase; color: var(--gray); font-weight: 800; letter-spacing: 0.5px; }
+        
+        .stock-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 1px solid #f1f5f9;
+        }
+        .stat-item { text-align: center; }
+        .stat-label { display: block; font-size: 0.7rem; color: var(--gray); font-weight: 700; text-transform: uppercase; }
+        .stat-value { font-size: 1.4rem; font-weight: 800; color: var(--dark); }
+
+        .stock-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { background: #f8fafc; }
+        .btn-add { color: #10b981; }
+        .btn-remove { color: #ef4444; }
+
+        .add-item-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+        .stock-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+        }
+        @media (max-width: 768px) {
+            .stock-form { grid-template-columns: 1fr; }
+            .stock-grid { grid-template-columns: 1fr; gap: 15px; }
+            .stock-card { padding: 20px; }
+            .stat-value { font-size: 1.2rem; }
+            .btn-login { width: 100%; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo-area">
+                <h1>ALP<span>I</span>TEL <span>ALMOXARIFADO</span></h1>
+            </div>
+            <div class="user-info">
+                <span id="user-display" style="font-weight: 600; color: var(--gray); margin-right: 15px;">---</span>
+                <a href="dashboard.html" style="text-decoration: none; padding: 8px 16px; border: 1px solid #cbd5e1; border-radius: 8px; color: var(--dark); font-weight: 700; font-size: 0.85rem; transition: all 0.2s; background: white;">Voltar ao Portal</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div class="welcome-text">
+            <h2>Gestão de Inventário</h2>
+            <p>Controle de peças, ferramentas e insumos para manutenção.</p>
+        </div>
+
+        <div class="add-item-box">
+            <h4 style="margin-bottom: 15px;">Cadastrar Novo Item</h4>
+            <form id="add-stock-form" class="stock-form">
+                <div class="input-group" style="margin: 0;">
+                    <label>Nome da Peça/Ferramenta</label>
+                    <input type="text" id="item-name" placeholder="Ex: Lâmpada H7" required>
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>Categoria</label>
+                    <select id="item-category">
+                        <option value="iluminacao">Iluminação</option>
+                        <option value="eletrica">Elétrica</option>
+                        <option value="mecanica">Mecânica</option>
+                        <option value="pneus">Pneus/Rodagem</option>
+                        <option value="epi">EPI/EPC</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>Quantidade Atual</label>
+                    <input type="number" id="item-qty" value="0" min="0" required>
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>Qtd. Mínima</label>
+                    <input type="number" id="item-min" value="5" min="1" required>
+                </div>
+                <button type="submit" class="btn-login" style="margin: 0; padding: 12px 25px; width: auto;">ADICIONAR</button>
+            </form>
+        </div>
+
+        <div class="stock-grid" id="stock-grid">
+            <!-- Itens do estoque aparecerão aqui -->
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p>© 2026 Alpitel Energy - Create By: Wilson borges xavier junior</p>
+    </footer>
+
+    <script src="auth.js"></script>
+    <script>
+        const initialStock = [
+            { id: 1, nome: 'Lâmpada H7 12V', categoria: 'iluminacao', quantidade: 15, minimo: 5 },
+            { id: 2, nome: 'Óleo Motor 5W30 (L)', categoria: 'mecanica', quantidade: 4, minimo: 10 },
+            { id: 3, nome: 'Filtro de Óleo Fiorino', categoria: 'mecanica', quantidade: 8, minimo: 4 },
+            { id: 4, nome: 'Pneu 175/70 R14', categoria: 'pneus', quantidade: 2, minimo: 4 }
+        ];
+
+        let stock = JSON.parse(localStorage.getItem('alpitel_stock')) || initialStock;
+
+        function renderStock() {
+            const grid = document.getElementById('stock-grid');
+            grid.innerHTML = '';
+
+            stock.forEach(item => {
+                let statusClass = 'good-stock';
+                if (item.quantidade <= 0) statusClass = 'low-stock';
+                else if (item.quantidade <= item.minimo) statusClass = 'medium-stock';
+
+                const card = document.createElement('div');
+                card.className = `stock-card ${statusClass}`;
+                card.innerHTML = `
+                    <span class="category">${item.categoria}</span>
+                    <h3>${item.nome}</h3>
+                    
+                    <div class="stock-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Disponível</span>
+                            <span class="stat-value">${item.quantidade}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Mínimo</span>
+                            <span class="stat-value" style="color: var(--gray); font-size: 1rem;">${item.minimo}</span>
+                        </div>
+                    </div>
+
+                    <div class="stock-actions">
+                        <button class="btn-action btn-add" onclick="updateQty(${item.id}, 1)">
+                            <span class="material-icons">add</span> Entrada
+                        </button>
+                        <button class="btn-action btn-remove" onclick="updateQty(${item.id}, -1)">
+                            <span class="material-icons">remove</span> Saída
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            localStorage.setItem('alpitel_stock', JSON.stringify(stock));
+        }
+
+        window.updateQty = function(id, delta) {
+            const item = stock.find(s => s.id === id);
+            if (item) {
+                item.quantidade = Math.max(0, item.quantidade + delta);
+                renderStock();
+            }
+        };
+
+        document.getElementById('add-stock-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                nome: document.getElementById('item-name').value,
+                categoria: document.getElementById('item-category').value,
+                quantidade: parseInt(document.getElementById('item-qty').value),
+                minimo: parseInt(document.getElementById('item-min').value)
+            };
+            stock.push(newItem);
+            e.target.reset();
+            renderStock();
+        });
+
+        renderStock();
+    </script>
+</body>
+</html>

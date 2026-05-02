@@ -1,0 +1,24 @@
+{
+  "name": "Portal Alpitel - Gestão Unificada",
+  "short_name": "Alpitel",
+  "description": "Sistema unificado de gestão de frotas e operações Alpitel.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#008C45",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
